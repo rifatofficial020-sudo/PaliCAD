@@ -1,0 +1,65 @@
+
+name: PaliCAD - Windows x64 Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build Pali Ijo CLI (Windows x64)
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        working-directory: packages/pali_ijo
+        shell: pwsh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "3.9.2"
+
+      - name: Display Dart version
+        run: dart --version
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Analyze Dart source
+        run: dart analyze
+
+      - name: Run tests
+        run: dart test
+
+      - name: Create build directory
+        run: New-Item -ItemType Directory -Force build | Out-Null
+
+      - name: Compile Windows x64 executable
+        run: |
+          dart compile exe bin/pali_ijo.dart `
+            -o build/pali_ijo-windows-x64.exe
+
+      - name: Test executable
+        run: |
+          .\build\pali_ijo-windows-x64.exe --help
+
+      - name: Upload Windows x64 build
+        uses: actions/upload-artifact@v4
+        with:
+          name: PaliIjo-Windows-x64
+          path: packages/pali_ijo/build/pali_ijo-windows-x64.exe
+          if-no-files-found: error
+          retention-days: 30
